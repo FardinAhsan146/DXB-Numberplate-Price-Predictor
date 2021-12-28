@@ -101,4 +101,4 @@ df = pd.DataFrame({
 df['price'] = df['price'].replace('\n','', regex = True)
 
 #Save as a csv
-df.to_csv('datasets/scraped.csv')
+df.to_csv('datasets/scraped.csv', index = False)
