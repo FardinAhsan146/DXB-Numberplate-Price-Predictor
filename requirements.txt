@@ -4,3 +4,5 @@ scikit-learn
 hyperopt
 seaborn
 python-Levenshtein
+selenium
+bs4
