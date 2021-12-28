@@ -1,7 +1,10 @@
 import time
+import re
+import requests 
 import numpy as np
 import pandas as pd
 
+from bs4 import BeautifulSoup 
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
@@ -20,11 +23,10 @@ driver.implicitly_wait(5)
 driver.get('https://plates.ae/plate.php')
 
 # Infinite scroll down to the bottom of the website
-scroll_pause_time = 1
+SCROLL_PAUSE_TIME = 1
 height_script = "return document.body.scrollHeight"
 last_height = driver.execute_script(height_script)
 while True:
-
     try:
         script = 'window.scrollTo(0, document.body.scrollHeight);'
         element_xpath = "//button[contains(text(), 'مشاهدة المزيد من اللوحات')]"
@@ -34,34 +36,69 @@ while True:
 
         # Click the button at the end of the page
         driver.find_elements_by_xpath(element_xpath)[0].click()
-        time.sleep(scroll_pause_time)
+        time.sleep(SCROLL_PAUSE_TIME)
 
         # Exit clause if end of page is reached
         new_height = driver.execute_script(height_script)
         if new_height == last_height:
             break
         last_height = new_height
-
+    
+    # Break out if button doesn't work
+    # It should so this is in case of error
     except ElementNotInteractableException:
         break
 
-# Extract data needed from webpage 
-number_css = '.plate_nub.one_db.dubai_font1.web_dbnum_on'
-letter_css = '.plate_code.one_db.dubai_font1.db_one.web_dbcode_on'
-price_css =  '.txt24bld.pricered.text-center'
 
-number = driver.find_elements_by_css_selector(number_css)
-letter = driver.find_elements_by_css_selector(letter_css)
-price  = driver.find_elements_by_css_selector(price_css)
-# Create csv
-# df = pd.DataFrame()
-# df['number'] = np.array([n.text for n in number])
-# df['letter'] = np.array([l.text for l in letter])
-# df['price'] = np.array([p.text for p in price])
+# Find the html blocks we need for the number plates
+border_selector = '.bntborder.padding-single'
+plate_borders = driver.find_elements_by_css_selector(border_selector)
+border_htmls = [elem.get_attribute("innerHTML") for elem in plate_borders]
 
-# df.to_csv('datasets/plates.csv')
-
-for i in range(100):
-    print(number[i].text,letter[i].text,price[i].text)
-
+#Close driver for good!
 driver.quit()
+
+# Create lists to put in data we need
+code_list = []
+number_list = []
+price_list = []
+city_list = []
+
+for html_element in border_htmls:
+    #Creatre soup obejct
+    soup = BeautifulSoup(html_element, 'html.parser')
+    
+    # Find the code
+    code_regex = re.compile('.*plate_code.*')
+    code = soup.find('div', {"class" : code_regex}).text
+    code_list.append(code)
+    
+    # Find number
+    number_regex = re.compile('.*plate_nub.*')
+    number = soup.find('div', {"class" : number_regex}).text
+    number_list.append(number)
+    
+    # Price
+    price = soup.find('span', {"class" : 'txt24bld pricered text-center'}).text
+    price_list.append(price)
+    
+    #city 
+    img_str = str(soup.find('div', {"class" : 'plate_img'}))
+    img_regex = re.compile("images/(.*?)\.svg")
+    city = re.findall(img_regex,img_str)[0]
+    city_list.append(city)
+
+# Create the dataframe
+df = pd.DataFrame({
+    'code':code_list,
+    'number':number_list,
+    'price':price_list,
+    'city':city_list,
+})
+
+# Remove new lines from price
+# So that it shows up in csv
+df['price'] = df['price'].replace('\n','', regex = True)
+
+#Save as a csv
+df.to_csv('datasets/scraped.csv')
