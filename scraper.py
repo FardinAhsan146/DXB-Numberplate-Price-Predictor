@@ -3,13 +3,15 @@ import re
 import requests 
 import numpy as np
 import pandas as pd
+import concurrent.futures
 
-from bs4 import BeautifulSoup 
+from bs4 import BeautifulSoup as bs
+
 from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import ElementNotInteractableException 
 
 # Webdriver settings
@@ -53,7 +55,23 @@ while True:
 # Find the html blocks we need for the number plates
 border_selector = '.bntborder.padding-single'
 plate_borders = driver.find_elements_by_css_selector(border_selector)
-border_htmls = [elem.get_attribute("innerHTML") for elem in plate_borders]
+
+
+
+# Create a threadpool executor to speed up the i/o requests
+with concurrent.futures.ThreadPoolExecutor() as executor:
+    futures = []       # List to hold the future objects
+    for elem in plate_borders:
+        futures.append(
+            executor.submit(
+                lambda elem: elem.get_attribute("innerHTML"),
+                elem = elem
+            )
+        )
+    
+    # Html elements of the border we chose by css selector
+    border_htmls =\
+    [future.result() for future in concurrent.futures.as_completed(futures)]
 
 #Close driver for good!
 driver.quit()
