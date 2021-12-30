@@ -4,5 +4,5 @@
 
 2. Cleaning notebook: [View](https://github.com/FardinAhsan146/DXB-Numberplate-Price-Predictor/blob/main/data_cleaning.ipynb)
 
-3. EDA, coming soon
+3. EDA notebooke: [View](https://github.com/FardinAhsan146/DXB-Numberplate-Price-Predictor/blob/main/EDA_notebook.ipynb)
 
