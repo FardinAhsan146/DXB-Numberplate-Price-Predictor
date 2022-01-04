@@ -8,4 +8,4 @@
 
 4. Feature Engineering: [View](https://github.com/FardinAhsan146/DXB-Numberplate-Price-Predictor/blob/main/feature_engineering_notebook.ipynb)
 
-5. ML testing: Coming soon
+5. ML testing: [View](https://github.com/FardinAhsan146/DXB-Numberplate-Price-Predictor/blob/main/preeliminary_ml.ipynb)
